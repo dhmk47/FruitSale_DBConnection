@@ -2,8 +2,10 @@ package dto;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 
-@Data
+//@Data
+@Getter
 @Builder
 public class Apple {
 	private static final int code = 1;
@@ -13,6 +15,11 @@ public class Apple {
 	
 	public static int getCode() {
 		return code;
+	}
+
+	@Override
+	public String toString() {
+		return "Apple [code = " + code + ", fruitName=" + fruitName + ", price=" + price + ", amount=" + amount + "]";
 	}
 	
 }

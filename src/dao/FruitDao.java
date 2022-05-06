@@ -8,6 +8,7 @@ import java.util.Scanner;
 
 import db.DBConnectionMgr;
 import dto.Apple;
+import dto.Strawberry;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -73,6 +74,7 @@ public class FruitDao {
 	
 	// select
 	public void getFruit() {
+		Strawberry strawberry = null;
 		Apple apple = null;
 		try {
 			con = pool.getConnection();
@@ -81,7 +83,13 @@ public class FruitDao {
 			rs = pstmt.executeQuery();
 			
 			while(rs.next()) {
-				if(rs.getInt(1) == Apple.getCode()) {
+				if(rs.getInt(1) == Strawberry.getCode()) {
+					strawberry = Strawberry.builder()
+							.fruitName(rs.getString(2))
+							.price(rs.getInt(3))
+							.amount(rs.getInt(4))
+							.build();
+				}else if(rs.getInt(1) == Apple.getCode()) {
 					apple = Apple.builder()
 							.fruitName(rs.getString(2))
 							.price(rs.getInt(3))
@@ -95,12 +103,71 @@ public class FruitDao {
 		} finally {
 			pool.freeConnection(con, pstmt, rs);
 		}
+		
+		System.out.println(strawberry);
 		System.out.println(apple);
 	}
 	
 	// update
 	public void updateFruit() {
-		
+		try {
+			con = pool.getConnection();
+//			sql = "update fruit set ? = ? where code = ?";
+//			pstmt = con.prepareStatement(sql);
+			
+			System.out.print("어떤 정보를 변경하시겠습니까?(fruit_name, price, amount): ");
+			String modifyInfo = sc.nextLine();
+//			pstmt.setString(1, modifyInfo);
+			
+			try {
+				if(modifyInfo.equals("fruit_name")) {
+					sql = "update fruit set fruit_name = ? where code = ?";
+					pstmt = con.prepareStatement(sql);
+					System.out.print("새로운 과일 이름을 입력하세요(문자열): ");
+					pstmt.setString(1, sc.nextLine());
+					
+					
+					System.out.print("과일 코드 입력(정수): ");
+					pstmt.setInt(2, sc.nextInt());
+					sc.nextLine();
+				}else if(modifyInfo.equals("price")){
+					sql = "update fruit set price = ? where code = ?";
+					pstmt = con.prepareStatement(sql);
+					System.out.print("새로운 가격을 입력하세요(정수): ");
+					pstmt.setInt(1, sc.nextInt());
+					sc.nextLine();
+					
+					System.out.print("과일 코드 입력(정수): ");
+					pstmt.setInt(2, sc.nextInt());
+					sc.nextLine();
+				}else if(modifyInfo.equals("amount")) {
+					sql = "update fruit set amount = ? where code = ?";
+					pstmt = con.prepareStatement(sql);
+					System.out.print("총 갯수를 입력하세요(정수): ");
+					pstmt.setInt(1, sc.nextInt());
+					sc.nextLine();
+					
+					System.out.print("과일 코드 입력(정수): ");
+					pstmt.setInt(2, sc.nextInt());
+					sc.nextLine();
+				}
+			} catch (InputMismatchException e) {
+				System.out.println("형식을 지켜주세요.");
+			}
+			
+			int result = pstmt.executeUpdate();
+			
+			if(result != 0) {
+				System.out.println("정보가 변경되었습니다.");
+				con.commit();
+			}else {
+				System.out.println("정보를 다시 입력해주세요.");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			pool.freeConnection(con, pstmt, rs);
+		}
 	}
 	
 	// delete

@@ -20,7 +20,7 @@ public class DBMain {
 			}else if(choice == 2) {
 				fruitDao.getFruit();
 			}else if(choice == 3) { 
-				
+				fruitDao.updateFruit();
 			}else if(choice == 4) {
 				fruitDao.deleteFruit();
 			}else if(choice == 5) {
