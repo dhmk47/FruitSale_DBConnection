@@ -3,18 +3,25 @@ package dao;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLDataException;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
 import db.DBConnectionMgr;
 import dto.Apple;
+import dto.Fruit;
 import dto.Strawberry;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class FruitDao {
 	private final DBConnectionMgr pool;
 	private final Scanner sc;
+	@NonNull
+	private ArrayList<Fruit> fruitList;
 	
 	private String sql;
 	private Connection con;
@@ -27,7 +34,10 @@ public class FruitDao {
 //		Connection con = null;
 //		PreparedStatement pstmt = null;
 //		ResultSet rs = null;
-		
+		int code = 0;
+		String name = null;
+		int price = 0;
+		int amount = 0;
 		try {
 			con = pool.getConnection();
 			sql = "INSERT INTO\r\n"
@@ -39,22 +49,26 @@ public class FruitDao {
 					+ "	?\r\n"
 					+ ")";
 			pstmt = con.prepareStatement(sql);
+			
 			try {
 				System.out.println("과일 코드 입력: ");
-				pstmt.setInt(1, sc.nextInt());
+				code = sc.nextInt();
 				sc.nextLine();
+				pstmt.setInt(1, code);
 				
 				System.out.print("과일 이름 입력: ");
-				String name = sc.nextLine();
+				name = sc.nextLine();
 				pstmt.setString(2, name);
 				
 				System.out.print(name + " 가격 입력: ");
-				pstmt.setInt(3, sc.nextInt());
+				price = sc.nextInt();
 				sc.nextLine();
+				pstmt.setInt(3, price);
 				
 				System.out.print(name + " 갯수 입력: ");
-				pstmt.setInt(4, sc.nextInt());
+				amount = sc.nextInt();
 				sc.nextLine();
+				pstmt.setInt(4, amount);
 			} catch (InputMismatchException e) {
 				System.out.println("과일 등록 실패!");
 				System.out.println("과일: 문자열\n가격: 정수\n갯수: 정수\n자료형을 지켜주세요");
@@ -74,8 +88,9 @@ public class FruitDao {
 	
 	// select
 	public void getFruit() {
-		Strawberry strawberry = null;
-		Apple apple = null;
+//		Strawberry strawberry = null;
+//		Apple apple = null;
+		fruitList.clear();
 		try {
 			con = pool.getConnection();
 			sql = "select * from fruit";
@@ -83,29 +98,58 @@ public class FruitDao {
 			rs = pstmt.executeQuery();
 			
 			while(rs.next()) {
-				if(rs.getInt(1) == Strawberry.getCode()) {
-					strawberry = Strawberry.builder()
-							.fruitName(rs.getString(2))
-							.price(rs.getInt(3))
-							.amount(rs.getInt(4))
-							.build();
-				}else if(rs.getInt(1) == Apple.getCode()) {
-					apple = Apple.builder()
-							.fruitName(rs.getString(2))
-							.price(rs.getInt(3))
-							.amount(rs.getInt(4))
-							.build();
-				}
+				Fruit fruit = Fruit.builder()
+						.code(rs.getInt(1))
+						.fruitName(rs.getString(2))
+						.price(rs.getInt(3))
+						.amount(rs.getInt(4))
+						.build();
+				fruitList.add(fruit);
 			}
-			
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
 			pool.freeConnection(con, pstmt, rs);
 		}
 		
-		System.out.println(strawberry);
-		System.out.println(apple);
+		for(Fruit fruit : fruitList) {
+			System.out.println(fruit);
+		}
+//		System.out.println(strawberry);
+//		System.out.println(apple);
+	}
+	
+	public void getFruitByFruitName() {
+		try {
+			con = pool.getConnection();
+			sql = "SELECT\r\n"
+					+ "	*\r\n"
+					+ "FROM\r\n"
+					+ "	fruit\r\n"
+					+ "WHERE\r\n"
+					+ "	fruit_name = ?";
+			pstmt = con.prepareStatement(sql);
+			System.out.print("검색할 과일 이름을 입력하세요: ");
+			pstmt.setString(1, sc.nextLine());
+			rs = pstmt.executeQuery();
+			rs.next();
+			try {
+				Fruit fruit = Fruit.builder()
+						.code(rs.getInt(1))
+						.fruitName(rs.getString(2))
+						.price(rs.getInt(3))
+						.amount(rs.getInt(4))
+						.build();
+				System.out.println(fruit);
+				
+			}catch (SQLDataException e) {
+				System.out.println("해당 과일은 존재하지 않습니다.");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			pool.freeConnection(con, pstmt, rs);
+		}
 	}
 	
 	// update
@@ -175,6 +219,51 @@ public class FruitDao {
 		}
 	}
 	
+	public int updateFruit(int code, int income, int oldAmount, int saleAmount) {
+		int updateIncome = 0;
+		try {
+			sql = "update fruit set amount = ? where code = ?";
+			pstmt = con.prepareStatement(sql);
+			int newAmount = oldAmount - saleAmount;
+			pstmt.setInt(1, newAmount);
+			pstmt.setInt(2, code);
+			pstmt.executeUpdate();
+
+			
+			sql = "select income from my_income";
+			pstmt = con.prepareStatement(sql);
+			rs = pstmt.executeQuery();
+			rs.next();
+			int myIncome = rs.getInt(1);
+			
+			sql = "update my_income set income = ?";
+			pstmt = con.prepareStatement(sql);
+			pstmt.setInt(1, myIncome + income);
+			updateIncome = pstmt.executeUpdate();
+			if(updateIncome == 0) {
+				sql = "INSERT INTO\r\n"
+						+ "	my_income\r\n"
+						+ "VALUES(\r\n"
+						+ "	1,\r\n"
+						+ "	0\r\n"
+						+ ")";
+				pstmt = con.prepareStatement(sql);
+				rs = pstmt.executeQuery();
+				
+				sql = "update my_income set income = ?";
+				pstmt = con.prepareStatement(sql);
+				pstmt.setInt(1, income);
+				updateIncome = pstmt.executeUpdate();
+			}else {
+				con.commit();
+			}
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		return updateIncome;
+	}
+	
 	// delete
 	public void deleteFruit() {
 //		String sql = null;
@@ -209,6 +298,61 @@ public class FruitDao {
 			e.printStackTrace();
 		} finally {
 			pool.freeConnection(con, pstmt);
+		}
+	}
+	
+	public void showIncome() {
+		try {
+			con = pool.getConnection();
+			sql = "select income from my_income";
+			pstmt = con.prepareStatement(sql);
+			rs = pstmt.executeQuery();
+			rs.next();
+			System.out.println("현재 수익: " + rs.getInt(1));
+		}catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			pool.freeConnection(con, pstmt, rs);
+		}
+	}
+	
+	public void saleFruit() {
+		System.out.print("판매할 과일 이름을 입력하세요: ");
+		String fruitName = sc.nextLine();
+		
+		try {
+			con = pool.getConnection();
+			sql = "select * from fruit where fruit_name = ?";
+			pstmt = con.prepareStatement(sql);
+			pstmt.setString(1, fruitName);
+			rs = pstmt.executeQuery();
+			
+			rs.next();
+			try {
+				rs.getInt(1);
+				System.out.println("현재 " + fruitName + " 수량: " + rs.getInt(4));
+				System.out.println("몇개를 판매 하시겠습니까?");
+				int saleCount = sc.nextInt();
+				sc.nextLine();
+				if(rs.getInt(4) < saleCount) {
+					System.out.println("개수초과...");
+				}else {
+					int price = rs.getInt(3) * saleCount;
+					int result = updateFruit(rs.getInt(1), price, rs.getInt(4), saleCount);
+					if(result != 0) {
+						System.out.println("판매 완료");
+						System.out.println(price + "원을 벌었습니다");
+					}else {
+						System.out.println("판매 실패");
+					}
+				}
+			}catch (SQLDataException e) {
+				System.out.println("해당 과일은 존재하지 않습니다.");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			pool.freeConnection(con, pstmt, rs);
 		}
 	}
 }
