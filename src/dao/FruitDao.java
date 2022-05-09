@@ -112,33 +112,38 @@ public class FruitDao {
 	public void updateFruit() {
 		try {
 			con = pool.getConnection();
-//			sql = "update fruit set ? = ? where code = ?";
-//			pstmt = con.prepareStatement(sql);
+			sql = "UPDATE\r\n"
+					+ "	fruit\r\n"
+					+ "SET\r\n"
+					+ "	? = ?\r\n"
+					+ "WHERE\r\n"
+					+ "	CODE = ?";
+			pstmt = con.prepareStatement(sql);
 			
 			System.out.print("어떤 정보를 변경하시겠습니까?(fruit_name, price, amount): ");
 			String modifyInfo = sc.nextLine();
-//			pstmt.setString(1, modifyInfo);
+			pstmt.setString(1, modifyInfo);
 			
 			try {
 				if(modifyInfo.equals("fruit_name")) {
-					sql = "update fruit set fruit_name = ? where code = ?";
-					pstmt = con.prepareStatement(sql);
+//					sql = "update fruit set fruit_name = ? where code = ?";
+//					pstmt = con.prepareStatement(sql);
 					System.out.print("새로운 과일 이름을 입력하세요(문자열): ");
-					pstmt.setString(1, sc.nextLine());
+					pstmt.setString(2, sc.nextLine());
 					
 					
 					System.out.print("과일 코드 입력(정수): ");
-					pstmt.setInt(2, sc.nextInt());
+					pstmt.setInt(3, sc.nextInt());
 					sc.nextLine();
 				}else if(modifyInfo.equals("price")){
-					sql = "update fruit set price = ? where code = ?";
-					pstmt = con.prepareStatement(sql);
+//					sql = "update fruit set price = ? where code = ?";
+//					pstmt = con.prepareStatement(sql);
 					System.out.print("새로운 가격을 입력하세요(정수): ");
-					pstmt.setInt(1, sc.nextInt());
+					pstmt.setInt(2, sc.nextInt());
 					sc.nextLine();
 					
 					System.out.print("과일 코드 입력(정수): ");
-					pstmt.setInt(2, sc.nextInt());
+					pstmt.setInt(3, sc.nextInt());
 					sc.nextLine();
 				}else if(modifyInfo.equals("amount")) {
 					sql = "update fruit set amount = ? where code = ?";
